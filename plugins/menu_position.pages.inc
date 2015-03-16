@@ -17,12 +17,12 @@ function menu_position_menu_position_condition_pages($variables) {
   // Grab the variables stored statically in the rule.
   $pages = $variables['pages'];
 
-  // Convert the Drupal path to lowercase.
-  $path = drupal_strtolower(drupal_get_path_alias($_GET['q']));
+  // Convert the Backdrop path to lowercase.
+  $path = backdrop_strtolower(backdrop_get_path_alias($_GET['q']));
   // Compare the lowercase internal and lowercase path alias (if any).
-  $page_match = drupal_match_path($path, $pages);
+  $page_match = backdrop_match_path($path, $pages);
   if (!$page_match && $path != $_GET['q']) {
-    $page_match = drupal_match_path($_GET['q'], $pages);
+    $page_match = backdrop_match_path($_GET['q'], $pages);
   }
 
   return $page_match;
@@ -47,7 +47,7 @@ function menu_position_menu_position_rule_pages_form(&$form, &$form_state) {
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
     '#attached' => array(
-      'js' => array(drupal_get_path('module', 'menu_position') . '/plugins/menu_position.pages.js'),
+      'js' => array(backdrop_get_path('module', 'menu_position') . '/plugins/menu_position.pages.js'),
     ),
   );
   $form['conditions']['pages']['pages'] = array(
@@ -75,7 +75,7 @@ function menu_position_menu_position_rule_pages_form_submit(&$form, &$form_state
   if (!empty($form_state['values']['pages'])) {
     // Add this plugin's variables to the rule.
     $variables = array(
-      'pages' => drupal_strtolower(trim($form_state['values']['pages'])),
+      'pages' => backdrop_strtolower(trim($form_state['values']['pages'])),
     );
     $form_state['values']['conditions']['pages'] = $variables;
   }

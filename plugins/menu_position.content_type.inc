@@ -37,7 +37,7 @@ function menu_position_menu_position_rule_content_type_form(&$form, &$form_state
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
     '#attached' => array(
-      'js' => array(drupal_get_path('module', 'menu_position') . '/plugins/menu_position.content_type.js'),
+      'js' => array(backdrop_get_path('module', 'menu_position') . '/plugins/menu_position.content_type.js'),
     ),
   );
   $form['conditions']['content_type']['content_type'] = array(

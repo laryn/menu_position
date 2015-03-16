@@ -15,7 +15,7 @@
  */
 function menu_position_menu_position_condition_language($variables) {
   // Grab the variables stored statically in the rule.
-  return ($variables['language'] == $GLOBALS['language']->language) ? TRUE : FALSE;
+  return ($variables['language'] == $GLOBALS['language']->langcode) ? TRUE : FALSE;
 }
 
 /**
@@ -37,13 +37,19 @@ function menu_position_menu_position_rule_language_form(&$form, &$form_state) {
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
     '#attached' => array(
-      'js' => array(drupal_get_path('module', 'menu_position') . '/plugins/menu_position.language.js'),
+      'js' => array(backdrop_get_path('module', 'menu_position') . '/plugins/menu_position.language.js'),
     ),
   );
+  $locale_language_list = array();
+  foreach (language_list() as $langcode => $language) {
+    if ($language->enabled) {
+      $locale_language_list[$langcode] = $language->name;
+    }
+  }
   $form['conditions']['language']['language'] = array(
     '#type' => 'select',
     '#title' => t('Language'),
-    '#options' => array('' => t('Any language')) + locale_language_list(),
+    '#options' => array('' => t('Any language')) + $locale_language_list,
     '#default_value' => !empty($variables['language']) ? $variables['language'] : '',
     '#description' => t("Apply this rule only when the language matches the current page's language."),
     '#weight' => -20,

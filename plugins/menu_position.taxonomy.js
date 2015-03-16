@@ -3,17 +3,17 @@
 /**
  * Provide the summary information for the taxonomy plugin's vertical tab.
  */
-Drupal.behaviors.menuPositionTaxonomy = {
+Backdrop.behaviors.menuPositionTaxonomy = {
   attach: function (context) {
-    $('fieldset#edit-taxonomy', context).drupalSetSummary(function (context) {
+    $('fieldset#edit-taxonomy', context).backdropSetSummary(function (context) {
       if ($('input[name="term"]', context).val()) {
-        return Drupal.t('Taxonomy: %term', {'%term' : $('input[name="term"]', context).val()});
+        return Backdrop.t('Taxonomy: %term', {'%term' : $('input[name="term"]', context).val()});
       }
       else if ($('select[name="vid"]', context).val() != 0) {
-        return Drupal.t('Vocabulary: %vocab', {'%vocab' : $('select[name="vid"] option:selected', context).text()});
+        return Backdrop.t('Vocabulary: %vocab', {'%vocab' : $('select[name="vid"] option:selected', context).text()});
       }
       else {
-        return Drupal.t('Any vocabulary or taxonomy');
+        return Backdrop.t('Any vocabulary or taxonomy');
       }
     });
     // Reset the taxonomy term autocomplete object when the vocabulary changes.
@@ -26,9 +26,9 @@ Drupal.behaviors.menuPositionTaxonomy = {
       $input.unbind('keyup');
       $input.unbind('blur');
       // Set new autocomplete handlers.
-      uri = Drupal.settings.menu_position_taxonomy_url + '/' + $(this).val();
+      uri = Backdrop.settings.menu_position_taxonomy_url + '/' + $(this).val();
       $('#edit-term-autocomplete').val(uri);
-      new Drupal.jsAC($input, new Drupal.ACDB(uri));
+      new Backdrop.jsAC($input, new Backdrop.ACDB(uri));
     });
   }
 };

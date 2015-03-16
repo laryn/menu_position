@@ -3,14 +3,14 @@
 /**
  * Provide the summary information for the pages plugin's vertical tab.
  */
-Drupal.behaviors.menuPositionPagesSettingsSummary = {
+Backdrop.behaviors.menuPositionPagesSettingsSummary = {
   attach: function (context) {
-    $('fieldset#edit-pages', context).drupalSetSummary(function (context) {
+    $('fieldset#edit-pages', context).backdropSetSummary(function (context) {
       if (!$('textarea[name="pages"]', context).val()) {
-        return Drupal.t('Any page');
+        return Backdrop.t('Any page');
       }
       else {
-        return Drupal.t('Restricted to certain pages');
+        return Backdrop.t('Restricted to certain pages');
       }
     });
   }

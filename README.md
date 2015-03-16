@@ -1,5 +1,4 @@
-ABOUT MENU POSITION
--------------------
+# Menu Position
 
 Often times site builders want certain types of content to appear in a specific
 position in the navigational menu. The simplest solution, adding all of that
@@ -17,8 +16,7 @@ This includes affecting:
 * Menu blocks provided by the Menu Block module
 
 
-RULE CHECKING
--------------
+## Rule checking
 
 Rules can be added, modified, re-ordered, disabled and deleted from the admin
 page available at: Structure > Menu position rules
@@ -50,8 +48,7 @@ Once a rule is "matched", the following things happen:
   breadcrumbs will be affected by the active trail specified in the rule.
 
 
-PLUG-INS
---------
+## Plug-ins
 
 Currently, the Menu position module only provides "content type" and "pages"
 plug-ins that allow conditions to be added to rules based on the type of content
@@ -63,3 +60,18 @@ See the following files for more information:
 - menu_position.api.php
 - menu_position.example_plugin.inc
 - menu_position.node_type.inc
+
+
+## License
+
+This project is GPL v2 software. See the LICENSE.txt file in this directory for
+complete text.
+
+## Current Maintainers
+
+-   Jerome Danthinne (https://github.com/jdanthinne/)
+
+## Credits
+
+This module was originally written for Drupal by John Albin
+(https://www.drupal.org/u/johnalbin).

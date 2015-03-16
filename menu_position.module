@@ -5,6 +5,17 @@
  */
 
 /**
+* Implements hook_config_info().
+*/
+function menu_position_config_info() {
+  $prefixes['menu_position.settings'] = array(
+    'label' => t('Main settings'),
+    'group' => t('Menu Position'),
+  );
+  return $prefixes;
+}
+
+/**
  * Implements hook_panels_pane_content_alter().
  *
  * Panels are rendered before hook_page_delivery_callback_alter() is called, so
@@ -21,9 +32,9 @@ function menu_position_panels_pre_render($display) {
  * hook_page_build (when blocks are added). We're using this hook for its
  * timing, not its data.
  */
-function menu_position_page_delivery_callback_alter() {
+function menu_position_preprocess_block__system__main() {
   // Don't evaluate the rules twice.
-  $evaluated = &drupal_static(__FUNCTION__, FALSE);
+  $evaluated = &backdrop_static(__FUNCTION__, FALSE);
   if ($evaluated) {
     return;
   }
@@ -91,7 +102,7 @@ function menu_position_menu() {
     'title' => 'Settings',
     'description' => 'Configure settings for menu positions.',
     'access arguments' => array('administer menu positions'),
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('menu_position_settings_form'),
     'type' => MENU_LOCAL_TASK,
     'file' => 'menu_position.admin.inc',
@@ -101,7 +112,7 @@ function menu_position_menu() {
     'title' => 'Add menu position rule',
     'description' => 'Add a new menu position rule.',
     'access arguments' => array('administer menu positions'),
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('menu_position_add_rule_form'),
     'type' => MENU_LOCAL_ACTION,
     'file' => 'menu_position.admin.inc',
@@ -110,7 +121,7 @@ function menu_position_menu() {
     'title' => 'Edit menu position rule',
     'description' => 'Edit a menu position rule.',
     'access arguments' => array('administer menu positions'),
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('menu_position_edit_rule_form'),
     'type' => MENU_CALLBACK,
     'file' => 'menu_position.admin.inc',
@@ -119,7 +130,7 @@ function menu_position_menu() {
     'title' => 'Delete menu position rule',
     'description' => 'Delete a menu position rule.',
     'access arguments' => array('administer menu positions'),
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('menu_position_delete_rule_form'),
     'type' => MENU_CALLBACK,
     'file' => 'menu_position.admin.inc',
@@ -231,7 +242,7 @@ function menu_position_menu_link_update($link) {
  *   - [entity]: The page's entity object, such as "node", "user", etc.
  */
 function menu_position_evaluate_rules($context = array()) {
-  // Sanity check: if there is no existing menu item, Drupal won't display any
+  // Sanity check: if there is no existing menu item, Backdrop won't display any
   // navigation menus anyway and will error out when we try methods below.
   if (menu_get_item() === FALSE) {
     return;
@@ -281,7 +292,7 @@ function menu_position_evaluate_rules($context = array()) {
     }
 
     // Let other modules manipulate the rule.
-    drupal_alter('menu_position_rule', $rule, $context, $rule_matches, $set_breadcrumb);
+    backdrop_alter('menu_position_rule', $rule, $context, $rule_matches, $set_breadcrumb);
 
     // We've found a matching rule.
     if ($rule_matches && menu_position_activate_rule($rule, $context, $set_breadcrumb)) {
@@ -316,7 +327,7 @@ function menu_position_activate_rule($rule, $context, $set_breadcrumb) {
   // Reset the menu trail that views may have set.
   $original_router_item = menu_get_item();
   if ($original_router_item['page_callback'] == 'views_page') {
-    $preferred = &drupal_static('menu_link_get_preferred');
+    $preferred = &backdrop_static('menu_link_get_preferred');
     unset($preferred[$context['path']]);
   }
 
@@ -334,7 +345,7 @@ function menu_position_activate_rule($rule, $context, $set_breadcrumb) {
   if ($set_breadcrumb) {
     // Manually set the preferred link for this path so that
     // menu_get_active_trail() returns the proper trail.
-    $preferred_links = &drupal_static('menu_link_get_preferred');
+    $preferred_links = &backdrop_static('menu_link_get_preferred');
     $preferred_links[$_GET['q']][MENU_PREFERRED_LINK] = menu_link_get_preferred($menu_item['link_path']);
 
     // Remove the menu position router from the end of the trail.
@@ -353,7 +364,7 @@ function menu_position_activate_rule($rule, $context, $set_breadcrumb) {
  *   The parent menu item's mlid.
  */
 function menu_position_expand_parent_link($plid = NULL) {
-  $link_id = &drupal_static(__FUNCTION__, NULL);
+  $link_id = &backdrop_static(__FUNCTION__, NULL);
 
   if (isset($plid)) {
     $link_id = $plid;
@@ -382,7 +393,7 @@ function menu_position_set_link($rid, $link) {
  *   The title that should be used for the rule's menu item.
  */
 function menu_position_get_link($path, $link = NULL) {
-  $links = &drupal_static(__FUNCTION__, array());
+  $links = &backdrop_static(__FUNCTION__, array());
 
   // If a link is given, save it for later retrieval.
   if ($link) {
@@ -400,7 +411,7 @@ function menu_position_get_link($path, $link = NULL) {
  */
 function menu_position_translated_menu_link_alter(&$item, &$map) {
   // Check if the rule's links are configured to be hidden.
-  switch (variable_get('menu_position_active_link_display', 'child')) {
+  switch (config_get('menu_position.settings', 'active_link_display')) {
     case 'child':
       if ($item['module'] == 'menu_position') {
         $menu_item = menu_position_get_link($item['link_path']);
@@ -427,7 +438,7 @@ function menu_position_translated_menu_link_alter(&$item, &$map) {
  * Retrieves a list of information about every rule plugin.
  */
 function menu_position_get_plugins() {
-  $plugins = &drupal_static(__FUNCTION__, array());
+  $plugins = &backdrop_static(__FUNCTION__, array());
 
   if (empty($plugins)) {
     foreach (module_implements('menu_position_rule_plugins') as $module) {

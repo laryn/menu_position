@@ -59,7 +59,7 @@ function HOOK_menu_position_rule_PLUGIN_form(&$form, &$form_state) {
     '#collapsed' => TRUE,
     '#attached' => array(
       // Ensures a proper summary is added to its vertical tab.
-      'js' => array(drupal_get_path('module', 'menu_position') . '/plugins/menu_position.example_plugin.js'),
+      'js' => array(backdrop_get_path('module', 'menu_position') . '/plugins/menu_position.example_plugin.js'),
     ),
   );
   $form['conditions']['PLUGIN']['lolspeak'] = array(

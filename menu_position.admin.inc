@@ -8,7 +8,7 @@
  * Routes menu_position links to homepage; normally overridden.
  */
 function menu_position_router() {
-  drupal_goto('<front>');
+  backdrop_goto('<front>');
 }
 
 /**
@@ -24,10 +24,24 @@ function menu_position_settings_form($form, &$form_state) {
       'parent' => t('Mark the rule\'s parent menu item as being "active".'),
       'none' => t('Don\'t mark any menu item as being "active".'),
     ),
-    '#default_value' => variable_get('menu_position_active_link_display', 'child'),
+    '#default_value' => config_get('menu_position.settings', 'active_link_display'),
     '#description' => t("By default, a matching menu position rule will insert the current page's title into the menu tree just below the rule's parent menu item."),
   );
-  return system_settings_form($form);
+  $form['actions']['#type'] = 'actions';
+  $form['actions']['submit'] = array(
+    '#type'   => 'submit',
+    '#value'  => t('Save configuration'),
+  );
+
+  return $form;
+}
+
+/**
+ * Submit handler for the settings form.
+ */
+function menu_position_settings_form_submit($form, &$form_state) {
+  $values = $form_state['values'];
+  config_set('menu_position.settings', 'active_link_display', $values['menu_position_active_link_display']);
 }
 
 /**
@@ -68,7 +82,7 @@ function _menu_position_form_menu_edit_item_alter(&$form, &$form_state) {
   if (!empty($mlids)) {
     // If the form hasn't been submitted, display a warning.
     if (empty($form_state['input'])) {
-      drupal_set_message(t('This menu item cannot be edited.'), 'warning');
+      backdrop_set_message(t('This menu item cannot be edited.'), 'warning');
     }
     // Disable all the normal form elements.
     foreach (array('link_title', 'description', 'enabled', 'expanded', 'parent', 'weight') as $key) {
@@ -120,7 +134,7 @@ function menu_position_edit_item_submit($form, &$form_state) {
   // Redirect to the menu edit form and display a message.
   list($menu_name, ) = explode(':', $form['parent']['#default_value']);
   $form_state['redirect'] = 'admin/structure/menu/manage/' . $menu_name;
-  drupal_set_message(t('Your configuration was not saved.'), 'error');
+  backdrop_set_message(t('Your configuration was not saved.'), 'error');
 }
 
 /**
@@ -133,7 +147,7 @@ function menu_position_enable_helper() {
   // Find rules with zero-value menu links.
   $rules = db_query('SELECT rid, plid, admin_title FROM {menu_position_rules} WHERE enabled = :enabled AND mlid = :mlid', array(':enabled' => 1, ':mlid' => 0))->fetchAll();
   if (!empty($rules)) {
-    drupal_set_message(t('Existing menu position rules were discovered and have now been re-configured so they will continue to work.'));
+    backdrop_set_message(t('Existing menu position rules were discovered and have now been re-configured so they will continue to work.'));
   }
   foreach ($rules as $rule) {
     $mlid = menu_position_add_menu_link($rule->rid, $rule->plid, $rule->admin_title);
@@ -153,7 +167,7 @@ function menu_position_rules_form_callback() {
   // callback to run the hack and then return the form definition.
   menu_position_enable_helper();
 
-  return drupal_get_form('menu_position_rules_form');
+  return backdrop_get_form('menu_position_rules_form');
 }
 
 /**
@@ -161,7 +175,7 @@ function menu_position_rules_form_callback() {
  */
 function menu_position_rules_form($form, &$form_state) {
   // We're re-using classes from the menu module.
-  $form['#attached']['css'] = array(drupal_get_path('module', 'menu') . '/menu.css');
+  $form['#attached']['css'] = array(backdrop_get_path('module', 'menu') . '/menu.css');
 
   $rules = db_query('SELECT rid, admin_title, plid, menu_name, enabled, weight FROM {menu_position_rules} ORDER BY weight, rid')->fetchAll();
   $delta = count($rules);
@@ -247,7 +261,7 @@ function menu_position_rules_form_submit($form, &$form_state) {
       ->condition('rid', $rid)
       ->execute();
   }
-  drupal_set_message(t('The new rules ordering has been applied.'));
+  backdrop_set_message(t('The new rules ordering has been applied.'));
 }
 
 /**
@@ -255,7 +269,7 @@ function menu_position_rules_form_submit($form, &$form_state) {
  */
 function theme_menu_position_rules_order($variables) {
   $element = $variables['element'];
-  drupal_add_tabledrag('menu-position-rules', 'order', 'sibling', 'rule-weight');
+  backdrop_add_tabledrag('menu-position-rules', 'order', 'sibling', 'rule-weight');
 
   $variables = array(
     'header' => array(
@@ -281,18 +295,18 @@ function theme_menu_position_rules_order($variables) {
     $element[$rule]['weight']['#attributes']['class'] = array('rule-weight');
     // Render the title, enabled, and weight columns.
     $data = array(
-      drupal_render($element[$rule]['title']),
-      drupal_render($element[$rule]['menu_name']),
+      backdrop_render($element[$rule]['title']),
+      backdrop_render($element[$rule]['menu_name']),
       array(
-        'data' => drupal_render($element[$rule]['enabled']),
+        'data' => backdrop_render($element[$rule]['enabled']),
         'class' => array('checkbox', 'menu-enabled'),
       ),
-      drupal_render($element[$rule]['weight']),
+      backdrop_render($element[$rule]['weight']),
     );
     // Render the operations links.
     foreach (element_children($element[$rule]['operations']) as $op) {
       $data[] = array(
-        'data' => drupal_render($element[$rule]['operations'][$op]),
+        'data' => backdrop_render($element[$rule]['operations'][$op]),
         'class' => array('menu-operations'),
       );
     }
@@ -318,7 +332,7 @@ function menu_position_add_rule_form($form, &$form_state) {
 function menu_position_edit_rule_form($form, &$form_state, $rid = 0) {
   // Make sure rid is set.
   if ($rid == 0) {
-    drupal_goto('admin/structure/menu-position');
+    backdrop_goto('admin/structure/menu-position');
     return;
   }
   // Grab the rule from the database.
@@ -419,7 +433,7 @@ function menu_position_rule_form($form, &$form_state) {
 function menu_position_rule_form_validate($form, &$form_state) {
   // Check if the user deleted the rule.
   if (!empty($form['delete']) && $form_state['values']['op'] == $form['delete']['#value']) {
-    drupal_goto('admin/structure/menu-position/delete/' . $form_state['values']['rid']);
+    backdrop_goto('admin/structure/menu-position/delete/' . $form_state['values']['rid']);
     return;
   }
   // Don't allow the user to select a menu name instead of a menu item.
@@ -443,13 +457,13 @@ function menu_position_rule_form_submit($form, &$form_state) {
   // Add the rule to the database.
   if ($form_state['values']['rid'] == '') {
     menu_position_add_rule($rule);
-    drupal_set_message(t('Rule has been added.'));
+    backdrop_set_message(t('Rule has been added.'));
   }
   // Update an exisiting rule.
   else {
     $rule['rid'] = $form_state['values']['rid'];
     menu_position_edit_rule($rule);
-    drupal_set_message(t('Rule has been modified.'));
+    backdrop_set_message(t('Rule has been modified.'));
   }
 
   $form_state['redirect'] = 'admin/structure/menu-position';
@@ -621,7 +635,7 @@ function menu_position_edit_menu_link($rid, $mlid, $plid, $admin_title) {
 function menu_position_delete_rule_form($form, &$form_state, $rid = 0) {
   // Make sure rid is set.
   if ($rid == 0) {
-    drupal_goto('admin/structure/menu-position');
+    backdrop_goto('admin/structure/menu-position');
     return;
   }
   $form['rid'] = array('#type' => 'hidden', '#value' => $rid);
@@ -639,7 +653,7 @@ function menu_position_delete_rule_form_submit($form, &$form_state) {
 
   menu_position_delete_rule($form_state['values']['rid']);
 
-  drupal_set_message(t('The %title rule has been deleted.', array('%title' => $title)));
+  backdrop_set_message(t('The %title rule has been deleted.', array('%title' => $title)));
   $form_state['redirect'] = 'admin/structure/menu-position';
 }
 

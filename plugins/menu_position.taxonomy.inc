@@ -27,7 +27,7 @@ function menu_position_menu_position_condition_taxonomy($variables) {
     $entity = $variables['context'][$entity_type];
 
     // Build a list of each taxonomy reference fields.
-    $taxonomy_fields = &drupal_static(__FUNCTION__, NULL);
+    $taxonomy_fields = &backdrop_static(__FUNCTION__, NULL);
     if (!isset($taxonomy_fields)) {
       $taxonomy_fields = array();
       $field_info = field_info_fields();
@@ -94,7 +94,7 @@ function menu_position_menu_position_rule_taxonomy_form(&$form, &$form_state) {
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
     '#attached' => array(
-      'js' => array(drupal_get_path('module', 'menu_position') . '/plugins/menu_position.taxonomy.js'),
+      'js' => array(backdrop_get_path('module', 'menu_position') . '/plugins/menu_position.taxonomy.js'),
     ),
   );
   $form['conditions']['taxonomy']['description'] = array(
@@ -182,13 +182,13 @@ function menu_position_menu_position_rule_taxonomy_form_submit(&$form, &$form_st
 function menu_position_taxonomy_autocomplete($vocabulary, $tags_typed = '') {
   // Don't query for terms if no vocabulary is selected.
   if ($vocabulary == 0) {
-    drupal_json_output(array());
+    backdrop_json_output(array());
     return;
   }
 
   // The user enters a comma-separated list of tags. We only autocomplete the last tag.
-  $tags_typed = drupal_explode_tags($tags_typed);
-  $tag_last = drupal_strtolower(array_pop($tags_typed));
+  $tags_typed = backdrop_explode_tags($tags_typed);
+  $tag_last = backdrop_strtolower(array_pop($tags_typed));
 
   $matches = array();
   if ($tag_last != '') {
@@ -225,7 +225,7 @@ function menu_position_taxonomy_autocomplete($vocabulary, $tags_typed = '') {
     }
   }
 
-  drupal_json_output($term_matches);
+  backdrop_json_output($term_matches);
 }
 
 /**
@@ -238,7 +238,7 @@ function menu_position_taxonomy_autocomplete_validate($element, &$form_state) {
 
   if ($tags = $element['#value']) {
     // Translate term names into actual terms.
-    $typed_terms = drupal_explode_tags($tags);
+    $typed_terms = backdrop_explode_tags($tags);
     foreach ($typed_terms as $typed_term) {
       // See if the term exists in the chosen vocabulary and return the tid;
       // otherwise, create a new 'autocreate' term for insert/update.

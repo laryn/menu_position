@@ -42,7 +42,7 @@ function menu_position_menu_position_rule_user_role_form(&$form, &$form_state) {
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
     '#attached' => array(
-      'js' => array(drupal_get_path('module', 'menu_position') . '/plugins/menu_position.user_roles.js'),
+      'js' => array(backdrop_get_path('module', 'menu_position') . '/plugins/menu_position.user_roles.js'),
     ),
   );
   $form['conditions']['user_role']['user_role'] = array(
