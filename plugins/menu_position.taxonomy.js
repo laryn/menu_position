@@ -9,15 +9,15 @@ Backdrop.behaviors.menuPositionTaxonomy = {
       if ($('input[name="term"]', context).val()) {
         return Backdrop.t('Taxonomy: %term', {'%term' : $('input[name="term"]', context).val()});
       }
-      else if ($('select[name="vid"]', context).val() != 0) {
-        return Backdrop.t('Vocabulary: %vocab', {'%vocab' : $('select[name="vid"] option:selected', context).text()});
+      else if ($('select[name="vocabulary"]', context).val() != 0) {
+        return Backdrop.t('Vocabulary: %vocab', {'%vocab' : $('select[name="vocabulary"] option:selected', context).text()});
       }
       else {
         return Backdrop.t('Any vocabulary or taxonomy');
       }
     });
     // Reset the taxonomy term autocomplete object when the vocabulary changes.
-    $('fieldset#edit-taxonomy #edit-vid', context).change(function () {
+    $('fieldset#edit-taxonomy #edit-vocabulary', context).change(function () {
       $input = $('#edit-term');
       // Remove old terms.
       $input.val('');

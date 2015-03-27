@@ -18,7 +18,7 @@ function menu_position_menu_position_condition_taxonomy($variables) {
   if ($variables['context']['entity_type']) {
 
     // Grab the variables stored statically in the rule.
-    $vid = $variables['vid'];
+    $vocabulary = $variables['vocabulary'];
     $tid = $variables['tid'];
 
     // Determine what kind of entity page this is.
@@ -52,7 +52,7 @@ function menu_position_menu_position_condition_taxonomy($variables) {
         // Check for any terms from a matching vocabulary.
         else {
           foreach ($entity->{$field}[$language] as $term) {
-            if (isset($term['taxonomy_term']->vid) && $term['taxonomy_term']->vid === $vid) {
+            if (isset($term['taxonomy_term']->vocabulary) && $term['taxonomy_term']->vocabulary === $vocabulary) {
               return TRUE;
             }
           }
@@ -104,27 +104,26 @@ function menu_position_menu_position_rule_taxonomy_form(&$form, &$form_state) {
   $vocabularies = taxonomy_vocabulary_get_names();
   $vocabulary_options = array();
   foreach ($vocabularies as $vocabulary) {
-    // $vocabulary['machine_name']
-    $vocabulary_options[$vocabulary->vid] = $vocabulary->name;
+    $vocabulary_options[$vocabulary->machine_name] = $vocabulary->name;
   }
-  $form['conditions']['taxonomy']['vid'] = array(
+  $form['conditions']['taxonomy']['vocabulary'] = array(
     '#type' => 'select',
     '#title' => t('Vocabulary'),
-    '#default_value' => !empty($variables['vid']) ? $variables['vid'] : '0',
+    '#default_value' => !empty($variables['vocabulary']) ? $variables['vocabulary'] : '0',
     '#options' => array('0' => t('- None -')) + $vocabulary_options,
   );
-  $form['conditions']['taxonomy']['vid_or_tid'] = array(
+  $form['conditions']['taxonomy']['vocabulary_or_tid'] = array(
     '#type' => 'radios',
     '#title' => t('In this vocabulary, match:'),
-    '#default_value' => !empty($variables['tid']) ? 'tid' : 'vid',
+    '#default_value' => !empty($variables['tid']) ? 'tid' : 'vocabulary',
     '#options' => array(
-      'vid' => t('any taxonomy term'),
+      'vocabulary' => t('any taxonomy term'),
       'tid' => t('only a selected taxonomy term'),
     ),
     '#states' => array(
       //'disabled' => array(
       'invisible' => array(
-        ':input[name=vid]' => array('value' => '0'),
+        ':input[name=vocabulary]' => array('value' => '0'),
       ),
     ),
   );
@@ -137,13 +136,12 @@ function menu_position_menu_position_rule_taxonomy_form(&$form, &$form_state) {
     '#maxlength' => 1024,
     '#title' => t('Taxonomy term'),
     '#default_value' => $terms,
-    '#autocomplete_path' => 'menu-position/taxonomy/autocomplete/' . (isset($form_state['input']['vid']) ? $form_state['input']['vid'] : $form['conditions']['taxonomy']['vid']['#default_value']),
+    '#autocomplete_path' => 'menu-position/taxonomy/autocomplete/' . (isset($form_state['input']['vocabulary']) ? $form_state['input']['vocabulary'] : $form['conditions']['taxonomy']['vocabulary']['#default_value']),
     '#element_validate' => array('menu_position_taxonomy_autocomplete_validate'),
     '#description' => t('Match at least one of these taxonomy terms.'),
     '#states' => array(
       'visible' => array(
-        ':input[name=vid_or_tid]' => array('value' => 'tid'),
-        //':input[name=vid_or_tid]' => array('enabled' => TRUE),
+        ':input[name=vocabulary_or_tid]' => array('value' => 'tid'),
       ),
     ),
   );
@@ -161,13 +159,13 @@ function menu_position_menu_position_rule_taxonomy_form(&$form, &$form_state) {
  *   A reference to the current form state, including submitted values.
  */
 function menu_position_menu_position_rule_taxonomy_form_submit(&$form, &$form_state) {
-  if (!empty($form_state['values']['term']) || $form_state['values']['vid'] != 0) {
+  if (!empty($form_state['values']['term']) || $form_state['values']['vocabulary'] != '0') {
     $variables = array(
-      'vid' => $form_state['values']['vid'],
+      'vocabulary' => $form_state['values']['vocabulary'],
       'tid' => array(),
     );
     // Determine if a taxonomy term has been selected.
-    if ($form_state['values']['vid_or_tid'] == 'tid' && !empty($form_state['values']['term'])) {
+    if ($form_state['values']['vocabulary_or_tid'] == 'tid' && !empty($form_state['values']['term'])) {
       foreach ($form_state['values']['term'] as $term) {
         $variables['tid'][] = $term['tid'];
       }
@@ -181,7 +179,7 @@ function menu_position_menu_position_rule_taxonomy_form_submit(&$form, &$form_st
  */
 function menu_position_taxonomy_autocomplete($vocabulary, $tags_typed = '') {
   // Don't query for terms if no vocabulary is selected.
-  if ($vocabulary == 0) {
+  if ($vocabulary == '0') {
     backdrop_json_output(array());
     return;
   }
@@ -204,7 +202,7 @@ function menu_position_taxonomy_autocomplete($vocabulary, $tags_typed = '') {
     // Select rows that match by term name.
     $tags_return = $query
       ->fields('t', array('tid', 'name'))
-      ->condition('t.vid', array($vocabulary))
+      ->condition('t.vocabulary', array($vocabulary))
       ->condition('t.name', '%' . db_like($tag_last) . '%', 'LIKE')
       ->range(0, 10)
       ->execute()
@@ -242,7 +240,7 @@ function menu_position_taxonomy_autocomplete_validate($element, &$form_state) {
     foreach ($typed_terms as $typed_term) {
       // See if the term exists in the chosen vocabulary and return the tid;
       // otherwise, create a new 'autocreate' term for insert/update.
-      if ($possibilities = taxonomy_term_load_multiple(array(), array('name' => trim($typed_term), 'vid' => array($form_state['values']['vid'])))) {
+      if ($possibilities = taxonomy_term_load_multiple(array(), array('name' => trim($typed_term), 'vocabulary' => array($form_state['values']['vocabulary'])))) {
         $term = array_pop($possibilities);
         $value[] = (array)$term;
       }
