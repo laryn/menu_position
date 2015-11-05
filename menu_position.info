@@ -3,4 +3,5 @@ description = Customize menu position of nodes depending on their content type, 
 backdrop = 1.x
 dependencies[] = menu
 type = module
+version = 1.x-1.0.2
 configure = admin/structure/menu-position
