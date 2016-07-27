@@ -412,6 +412,9 @@ function menu_position_activate_rule($rule, array $context, $set_breadcrumb) {
   // Retrieve menu item specified in the rule.
   $menu_item = menu_link_load($rule->mlid);
 
+  // Get the current page title.
+  $cached_title = drupal_get_title();
+
   // Sanity check: if the menu link doesn't exist abort processing the rule.
   if (!$menu_item) {
     return FALSE;
@@ -449,6 +452,10 @@ function menu_position_activate_rule($rule, array $context, $set_breadcrumb) {
     $active_trail = menu_set_active_trail();
     array_pop($active_trail);
     menu_set_active_trail($active_trail);
+
+    if (drupal_get_title() !== $cached_title) {
+      drupal_set_title($cached_title, PASS_THROUGH);
+    }
   }
 
   return TRUE;
