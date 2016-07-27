@@ -283,42 +283,57 @@ function menu_position_get_activated_rules($context) {
  *
  *   n.b. Only 'path' is guaranteed to be populated. The other values
  *   will be available only if the current page is an "entity" page.
- * @param bool $use_cache
+ * @param bool $use_static_cache
  *   If TRUE and the specified context has already been processed, then
  *   simply return the cached array of rules which were activated for that
  *   context. If the context has not yet been processed, normal processing
  *   will take place.
+ * @param bool $use_cache
+ *   If TRUE (default) and the specified context has already been processed by
+ *   a previous request, then use that as a list for rules to evaluate for the
+ *   context. If the context has not yet been processed, normal processing will
+ *   take place. Note that this takes effect only when the variable
+ *   'menu_position_rules_cache_enabled' is set to 1. By default it is 0.
+ *   This can be set through the settings.php or the module's settigns form.
  *
  * @return array
  *   An array of the rules which were activated for the specified context.
  */
-function menu_position_evaluate_rules($context = array(), $use_cache = FALSE) {
-  $cache = &drupal_static(__FUNCTION__);
-  if (!isset($cache)) {
-    $cache = array();
-  }
+function menu_position_evaluate_rules($context = array(), $use_static_cache = FALSE, $use_cache = TRUE) {
   if (empty($context)) {
     return array();
   }
 
+  // Use the cache only when needed and it is enabled.
+  $use_cache = $use_cache && variable_get('menu_position_rules_cache_enabled', 0);
+
+  $cache = &drupal_static(__FUNCTION__, array());
+
   // Hash the context array to generate a cache key.
   $cache_key = array(
-    'path' => $context['path'],
+    'path' => md5($context['path']),
+    'entity_type' => '',
+    'bundle_name' => '',
+    'entity_id'   => '',
   );
   if (!empty($context['entity_type'])) {
     $entity_type = $context['entity_type'];
     $entity = $context[$entity_type];
     list($id, $vid, $bundle) = entity_extract_ids($entity_type, $entity);
-    $cache_key += array(
-      'entity_type' => $entity_type,
-      'bundle_name' => $bundle,
-      'entity_id'   => $id,
-    );
+    $cache_key['entity_type'] = $entity_type;
+    $cache_key['bundle_name'] = $bundle;
+    $cache_key['entity_id'] = $id;
   }
-  $cache_key = md5(serialize($cache_key));
+  $cache_key = implode(':', array_filter(array(
+    'menu_position:rules',
+    $cache_key['entity_type'],
+    $cache_key['bundle_name'],
+    $cache_key['entity_id'],
+    $cache_key['path'],
+  )));
 
   // If we just want the rules and we have a cached value, return immediately.
-  if ($use_cache) {
+  if ($use_static_cache) {
     if (array_key_exists($cache_key, $cache)) {
       return $cache[$cache_key];
     }
@@ -333,12 +348,33 @@ function menu_position_evaluate_rules($context = array(), $use_cache = FALSE) {
     return $cache[$cache_key];
   }
 
-  // Retrieve the rules from the database. For speed, we don't call
-  // menu_position_read_rules() and unserialize the conditions only if needed.
-  $rules = db_query('SELECT * FROM {menu_position_rules} WHERE enabled = :enabled ORDER BY weight, rid', array(':enabled' => 1));
-
   // Retrieve the list of menus the path is already in.
-  $menu_names = db_query('SELECT menu_name FROM {menu_links} WHERE link_path = :path', array(':path' => $context['path']))->fetchCol();
+  $menu_names = db_select('menu_links', 'm')
+    ->fields('m', array('menu_name'))
+    ->condition('m.link_path', $context['path'], '=')
+    ->execute()
+    ->fetchCol();
+
+  // Extract a list from cache.
+  if ($use_cache && ($cache_entry = cache_get($cache_key, 'cache')) !== FALSE) {
+    $rules = $cache_entry->data;
+  }
+  else {
+    // Retrieve the rules from the database. For speed, we don't call
+    // menu_position_read_rules() and unserialize the conditions only if needed.
+    $rules_query = db_select('menu_position_rules', 'm')
+      ->fields('m', array('rid', 'conditions', 'menu_name', 'plid', 'mlid'))
+      ->condition('m.enabled', 1, '=')
+      ->orderBy('m.weight')
+      ->orderBy('m.rid');
+
+    // Try to additionally filter-out the rules list.
+    if (count($menu_names) && !count(module_implements("menu_position_rule_alter"))) {
+      $rules_query->condition('m.menu_name', $menu_names, 'NOT IN');
+    }
+
+    $rules = $rules_query->execute();
+  }
 
   // Flag that we still need to set the breadcrumb.
   $set_breadcrumb = TRUE;
@@ -354,8 +390,13 @@ function menu_position_evaluate_rules($context = array(), $use_cache = FALSE) {
     else {
       // A rule with no conditions always matches.
       $rule_matches = TRUE;
-      // Go through each condition, ANDing each result.
-      $rule->conditions = unserialize($rule->conditions);
+
+      // The ones from cache are already unserialized.
+      if (is_string($rule->conditions)) {
+        $rule->conditions = unserialize($rule->conditions);
+      }
+
+      // Go through each condition, AND-ing each result.
       foreach ($rule->conditions as $plugin => $variables) {
         // Add the current rule and node to the callback's variables.
         $variables['rule'] = $rule;
@@ -391,6 +432,11 @@ function menu_position_evaluate_rules($context = array(), $use_cache = FALSE) {
       // Don't let other rules match against this rule's menu.
       $menu_names[] = $rule->menu_name;
     }
+  }
+
+  if ($use_cache && $cache_entry === FALSE) {
+    // There was a cache-miss, so iniialize the cache for next request(s).
+    cache_set($cache_key, $cache[$cache_key], 'cache', CACHE_PERMANENT);
   }
 
   return $cache[$cache_key];

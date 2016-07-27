@@ -16,6 +16,7 @@ function menu_position_router() {
  */
 function menu_position_settings_form($form, &$form_state) {
   $form = array();
+
   $form['menu_position_active_link_display'] = array(
     '#type' => 'radios',
     '#title' => t('When a menu position rule matches:'),
@@ -27,6 +28,18 @@ function menu_position_settings_form($form, &$form_state) {
     '#default_value' => variable_get('menu_position_active_link_display', 'child'),
     '#description' => t("By default, a matching menu position rule will insert the current page's title into the menu tree just below the rule's parent menu item."),
   );
+
+  $form['menu_position_rules_cache_enabled'] = array(
+    '#title' => t('Use persistent cache for activated rules.'),
+    '#description' => t("<strong>Experimental!</strong> Used to speed-up the rules evaluation process. Disabled by default."),
+    '#type' => 'radios',
+    '#default_value' => variable_get('menu_position_rules_cache_enabled', 0),
+    '#options' => array(
+      t('Disabled'),
+      t('Enabled'),
+    ),
+  );
+
   return system_settings_form($form);
 }
 
@@ -255,6 +268,8 @@ function menu_position_rules_form_submit($form, &$form_state) {
       ->condition('rid', $rid)
       ->execute();
   }
+
+  cache_clear_all('menu_position:rules:', 'cache', TRUE);
   drupal_set_message(t('The new rules ordering has been applied.'));
 }
 
@@ -521,6 +536,8 @@ function menu_position_add_rule(array $rule) {
     ->fields(array('mlid' => $mlid))
     ->condition('rid', $rid)
     ->execute();
+
+  cache_clear_all('menu_position:rules:', 'cache', TRUE);
 }
 
 /**
@@ -603,6 +620,7 @@ function menu_position_edit_rule(array $rule) {
   // Update the link.
   $mlid = db_query('SELECT mlid FROM {menu_position_rules} WHERE rid = :rid', array(':rid' => $rule['rid']))->fetchField();
   menu_position_edit_menu_link($rule['rid'], $mlid, $rule['plid'], $rule['admin_title']);
+  cache_clear_all('menu_position:rules:', 'cache', TRUE);
 }
 
 /**
@@ -690,4 +708,5 @@ function menu_position_delete_rule($rid) {
     ->condition('rid', $rid)
     ->execute();
   menu_link_delete(NULL, 'menu-position/' . $rid);
+  cache_clear_all('menu_position:rules:', 'cache', TRUE);
 }
