@@ -18,7 +18,6 @@ function menu_position_menu_position_condition_taxonomy($variables) {
   if ($variables['context']['entity_type']) {
 
     // Grab the variables stored statically in the rule.
-    $vocabulary = $variables['vocabulary'];
     $tid = $variables['tid'];
 
     // Determine what kind of entity page this is.
@@ -44,7 +43,7 @@ function menu_position_menu_position_condition_taxonomy($variables) {
         // Check for matching terms.
         if (!empty($tid)) {
           foreach ($entity->{$field}[$language] as $term) {
-            if (in_array($term['tid'], $tid)) {
+            if ($term['tid'] == $tid) {
               return TRUE;
             }
           }
@@ -52,7 +51,8 @@ function menu_position_menu_position_condition_taxonomy($variables) {
         // Check for any terms from a matching vocabulary.
         else {
           foreach ($entity->{$field}[$language] as $term) {
-            if (isset($term['taxonomy_term']->vocabulary) && $term['taxonomy_term']->vocabulary === $vocabulary) {
+            $full_term = taxonomy_term_load($tid);
+            if (isset($term['taxonomy_term']->vocabulary) && $term['taxonomy_term']->vocabulary === $full_term->vocabulary) {
               return TRUE;
             }
           }
