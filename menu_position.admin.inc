@@ -516,6 +516,9 @@ function menu_position_rule_form_submit($form, &$form_state) {
  *     is array containing the necessary variables for that plugin.
  *   - menu_name: The machine name of the menu where this rule is positioned.
  *   - plid: The mlid of the parent menu link specified in the rule.
+ *
+ * @return $rid
+ *   ID of newly created rule.
  */
 function menu_position_add_rule(array $rule) {
   $fields = array(
@@ -538,6 +541,8 @@ function menu_position_add_rule(array $rule) {
     ->execute();
 
   cache_clear_all('menu_position:rules:', 'cache', TRUE);
+
+  return $rid;
 }
 
 /**
