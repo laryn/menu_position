@@ -69,9 +69,9 @@ complete text.
 
 ## Current Maintainers
 
--   Jerome Danthinne (https://github.com/jdanthinne/)
+- [Laryn Kragt Bakker](https://github.com/laryn/)
 
 ## Credits
 
-This module was originally written for Drupal by John Albin
-(https://www.drupal.org/u/johnalbin).
+- Ported to Backdrop by [Jerome Danthinne](https://github.com/jdanthinne/).
+- Originally written for Drupal by [John Albin](https://www.drupal.org/u/johnalbin).
