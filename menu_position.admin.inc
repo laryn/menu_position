@@ -27,7 +27,7 @@ function menu_position_settings_form($form, &$form_state) {
     '#default_value' => config_get('menu_position.settings', 'active_link_display'),
     '#description' => t("By default, a matching menu position rule will insert the current page's title into the menu tree just below the rule's parent menu item."),
   );
-  $form['actions']['#type'] = 'actions';
+  $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
     '#type'   => 'submit',
     '#value'  => t('Save configuration'),
@@ -120,7 +120,7 @@ function _menu_position_menu_link_update($link) {
         ->fields(array(
           'menu_name' => $link['menu_name'],
           'plid' => $link['plid'],
-          ))
+        ))
         ->condition('rid', $rule->rid)
         ->execute();
     }
@@ -216,20 +216,24 @@ function menu_position_rules_form($form, &$form_state) {
           '#id' => 'edit-rule-' . $rule->rid,
         ),
         'operations' => array(
-          'edit-link' => array(
-            '#type' => 'link',
-            '#title' => t('edit'),
-            '#href' => 'admin/structure/menu-position/edit/' . $rule->rid,
-          ),
-          'delete-link' => array(
-            '#type' => 'link',
-            '#title' => t('delete'),
-            '#href' => 'admin/structure/menu-position/delete/' . $rule->rid,
+          'data' => array(
+            '#type' => 'dropbutton',
+            '#links' => array(
+              'edit-link' => array(
+                'title' => t('Edit'),
+                'href' => 'admin/structure/menu-position/edit/' . $rule->rid,
+              ),
+              'delete-link' => array(
+                'title' => t('Delete'),
+                'href' => 'admin/structure/menu-position/delete/' . $rule->rid,
+              ),
+            ),
           ),
         ),
       );
     }
-    $form['submit'] = array(
+    $form['actions'] = array('#type' => 'actions');
+    $form['actions']['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Save'),
     );
@@ -282,7 +286,6 @@ function theme_menu_position_rules_order($variables) {
       t('Weight'),
       array(
         'data' => t('Operations'),
-        'colspan' => '2',
       ),
     ),
     'rows' => array(),
@@ -293,23 +296,16 @@ function theme_menu_position_rules_order($variables) {
   foreach (element_children($element) as $rule) {
     // Add special classes to be used for tabledrag.js.
     $element[$rule]['weight']['#attributes']['class'] = array('rule-weight');
-    // Render the title, enabled, and weight columns.
-    $data = array(
-      backdrop_render($element[$rule]['title']),
+    // Render the title, enabled, weight, and operations columns.
+    $data = array(backdrop_render($element[$rule]['title']),
       backdrop_render($element[$rule]['menu_name']),
       array(
         'data' => backdrop_render($element[$rule]['enabled']),
         'class' => array('checkbox', 'menu-enabled'),
       ),
       backdrop_render($element[$rule]['weight']),
+      backdrop_render($element[$rule]['operations']),
     );
-    // Render the operations links.
-    foreach (element_children($element[$rule]['operations']) as $op) {
-      $data[] = array(
-        'data' => backdrop_render($element[$rule]['operations'][$op]),
-        'class' => array('menu-operations'),
-      );
-    }
     $variables['rows'][] = array(
       'data' => $data,
       'class' => array('draggable'),
@@ -345,11 +341,11 @@ function menu_position_edit_rule_form($form, &$form_state, $rid = 0) {
  */
 function menu_position_rule_form($form, &$form_state) {
   // Set the default values.
-  $rid          = !empty($form_state['#menu-position-rule']['rid'])         ? $form_state['#menu-position-rule']['rid'] : '';
+  $rid          = !empty($form_state['#menu-position-rule']['rid']) ? $form_state['#menu-position-rule']['rid'] : '';
   $admin_title  = !empty($form_state['#menu-position-rule']['admin_title']) ? $form_state['#menu-position-rule']['admin_title'] : '';
-  $menu_name    = !empty($form_state['#menu-position-rule']['menu_name'])   ? $form_state['#menu-position-rule']['menu_name'] : '';
-  $plid         = !empty($form_state['#menu-position-rule']['plid'])        ? $form_state['#menu-position-rule']['plid'] : NULL;
-  $mlid         = !empty($form_state['#menu-position-rule']['mlid'])        ? $form_state['#menu-position-rule']['mlid'] : NULL;
+  $menu_name    = !empty($form_state['#menu-position-rule']['menu_name']) ? $form_state['#menu-position-rule']['menu_name'] : '';
+  $plid         = !empty($form_state['#menu-position-rule']['plid']) ? $form_state['#menu-position-rule']['plid'] : NULL;
+  $mlid         = !empty($form_state['#menu-position-rule']['mlid']) ? $form_state['#menu-position-rule']['mlid'] : NULL;
 
   $form['rid'] = array(
     '#type' => 'hidden',
@@ -391,12 +387,13 @@ function menu_position_rule_form($form, &$form_state) {
     '#type' => 'vertical_tabs',
   );
 
-  $form['submit'] = array(
+  $form['actions'] = array('#type' => 'actions');
+  $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
   );
   if ($rid) {
-    $form['delete'] = array(
+    $form['actions']['delete'] = array(
       '#type' => 'submit',
       '#value' => t('Delete'),
     );
