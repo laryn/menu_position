@@ -102,6 +102,9 @@ function menu_position_update_1000() {
   $config->set('active_link_display', update_variable_get('menu_position_active_link_display', 'child'));
   update_variable_del('menu_position_active_link_display');
   $config->save();
+
+  // Make sure menu links are created in D7 upgrades.
+  menu_position_enable();
 }
 
 /**
