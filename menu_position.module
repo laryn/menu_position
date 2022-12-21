@@ -16,23 +16,10 @@ function menu_position_config_info() {
 }
 
 /**
- * Implements hook_panels_pane_content_alter().
+ * Implements hook_preprocess_block().
  *
- * Panels are rendered before hook_page_delivery_callback_alter() is called, so
- * for Panels pages, we evaluate our rules here instead.
  */
-function menu_position_panels_pre_render($display) {
-  menu_position_page_delivery_callback_alter();
-}
-
-/**
- * Implements hook_page_delivery_callback_alter().
- *
- * This is the only hook that occurs after the page callback, but before
- * hook_page_build (when blocks are added). We're using this hook for its
- * timing, not its data.
- */
-function menu_position_preprocess_block__system__main() {
+function menu_position_preprocess_block(&$variables) {
   // Don't evaluate the rules twice.
   $evaluated = &backdrop_static(__FUNCTION__, FALSE);
   if ($evaluated) {
@@ -220,6 +207,9 @@ function menu_position_menu_link_alter(&$item) {
   if (isset($item['module']) && $item['module'] == 'menu_position') {
     // Don't allow the link to be "enabled".
     $item['hidden'] = 1;
+    // Set the customized flag to prevent menu item from being removed when
+    // menu cache is cleared.
+    $item['customized'] = 1;
   }
 }
 
