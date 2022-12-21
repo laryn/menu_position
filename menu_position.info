@@ -1,7 +1,6 @@
 name = Menu position
-description = Customize menu position of nodes depending on their content type, associated terms and others conditions.
+description = Customize menu position of content depending on the content type, associated terms and other conditions.
 backdrop = 1.x
 dependencies[] = menu
 type = module
-version = 1.x-1.0.2
 configure = admin/structure/menu-position
