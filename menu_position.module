@@ -16,23 +16,10 @@ function menu_position_config_info() {
 }
 
 /**
- * Implements hook_panels_pane_content_alter().
+ * Implements hook_preprocess_block().
  *
- * Panels are rendered before hook_page_delivery_callback_alter() is called, so
- * for Panels pages, we evaluate our rules here instead.
  */
-function menu_position_panels_pre_render($display) {
-  menu_position_page_delivery_callback_alter();
-}
-
-/**
- * Implements hook_page_delivery_callback_alter().
- *
- * This is the only hook that occurs after the page callback, but before
- * hook_page_build (when blocks are added). We're using this hook for its
- * timing, not its data.
- */
-function menu_position_preprocess_block__system__main() {
+function menu_position_preprocess_block(&$variables) {
   // Don't evaluate the rules twice.
   $evaluated = &backdrop_static(__FUNCTION__, FALSE);
   if ($evaluated) {
@@ -232,6 +219,7 @@ function menu_position_menu_link_alter(&$item) {
   if (isset($item['module']) && $item['module'] == 'menu_position') {
     // Don't allow the link to be "enabled".
     $item['hidden'] = 1;
+    $item['customized'] = 1;
   }
 }
 
@@ -338,7 +326,7 @@ function menu_position_evaluate_rules($context = array(), $use_static_cache = FA
   // Otherwise process the context as normal, cache the result, and return that.
   $cache[$cache_key] = array();
 
-  // Sanity check: if there is no existing menu item, Drupal won't display any
+  // Sanity check: if there is no existing menu item, Backdrop won't display any
   // navigation menus anyway and will error out when we try methods below.
   if (menu_get_item($context['path']) === FALSE) {
     return $cache[$cache_key];
@@ -567,6 +555,7 @@ function menu_position_translated_menu_link_alter(&$item, &$map) {
           $item['title'] = $menu_item['title'];
           $item['href'] = $menu_item['href'];
           $item['hidden'] = 0;
+          $item['customized'] = 1;
         }
       }
       elseif ($item['mlid'] == menu_position_expand_parent_link()) {

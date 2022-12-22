@@ -48,11 +48,11 @@ function menu_position_menu_position_condition_taxonomy(array $variables) {
 
       $tids = array();
       foreach ($taxonomy_fields as $field => $translatable) {
-        $language = $translatable ? $entity->language : LANGUAGE_NONE;
-        if (!empty($entity->{$field}[$language])) {
+        $langcode = $translatable ? $entity->langcode : LANGUAGE_NONE;
+        if (!empty($entity->{$field}[$langcode])) {
           // Check for matching terms.
           if (!empty($tid)) {
-            foreach ($entity->{$field}[$language] as $term) {
+            foreach ($entity->{$field}[$langcode] as $term) {
               if (in_array($term['tid'], $tid)) {
                 return TRUE;
               }
@@ -60,7 +60,7 @@ function menu_position_menu_position_condition_taxonomy(array $variables) {
           }
           // Check for any terms from a matching vocabulary.
           else {
-            foreach ($entity->{$field}[$language] as $term) {
+            foreach ($entity->{$field}[$langcode] as $term) {
               $tids[] = $term['tid'];
             }
           }
@@ -206,7 +206,7 @@ function menu_position_menu_position_rule_taxonomy_form(array &$form, array &$fo
  *   A reference to the current form state, including submitted values.
  */
 function menu_position_menu_position_rule_taxonomy_form_submit(array &$form, array &$form_state) {
-  if (!empty($form_state['values']['term']) || $form_state['values']['vocabulary'] != 0) {
+  if (!empty($form_state['values']['term']) || !empty($form_state['values']['vocabulary'])) {
     $variables = array(
       'vocabulary' => $form_state['values']['vocabulary'],
       'tid' => array(),
