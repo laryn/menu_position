@@ -25,7 +25,7 @@ function menu_position_menu_position_condition_taxonomy(array $variables) {
     $match_types = $variables['match_types'];
 
     // Grab the variables stored statically in the rule.
-    $vocabulary_name = $variables['vocabulary_name'];
+    $vocabulary = $variables['vocabulary'];
     $tid = $variables['tid'];
 
     // Determine what kind of entity page this is.
@@ -67,9 +67,9 @@ function menu_position_menu_position_condition_taxonomy(array $variables) {
         }
       }
       if (count($tids)) {
-        $count = db_query("SELECT count(tid) FROM {taxonomy_term_data} WHERE tid IN (:tids) AND vocabulary = :vocabulary_name", array(
+        $count = db_query("SELECT count(tid) FROM {taxonomy_term_data} WHERE tid IN (:tids) AND vocabulary = :vocabulary", array(
           ':tids' => $tids,
-          ':vocabulary_name' => $vocabulary_name,
+          ':vocabulary' => $vocabulary,
         ))->fetchField();
         if ($count > 0) {
           return TRUE;
@@ -87,7 +87,7 @@ function menu_position_menu_position_condition_taxonomy(array $variables) {
       }
       // Check for any terms from a matching vocabulary.
       else {
-        if (isset($entity->vocabulary) && $entity->vocabulary === $vocabulary_name) {
+        if (isset($entity->vocabulary) && $entity->vocabulary === $vocabulary) {
           return TRUE;
         }
       }
@@ -154,23 +154,23 @@ function menu_position_menu_position_rule_taxonomy_form(array &$form, array &$fo
   foreach ($vocabularies as $vocabulary) {
     $vocabulary_options[$vocabulary->machine_name] = $vocabulary->name;
   }
-  $form['conditions']['taxonomy']['vocabulary_name'] = array(
+  $form['conditions']['taxonomy']['vocabulary'] = array(
     '#type' => 'select',
     '#title' => t('Vocabulary'),
-    '#default_value' => !empty($variables['vocabulary_name']) ? $variables['vocabulary_name'] : '',
+    '#default_value' => !empty($variables['vocabulary']) ? $variables['vocabulary'] : '',
     '#options' => array('0' => t('- None -')) + $vocabulary_options,
   );
-  $form['conditions']['taxonomy']['vocab_or_tid'] = array(
+  $form['conditions']['taxonomy']['vocabulary_or_tid'] = array(
     '#type' => 'radios',
     '#title' => t('In this vocabulary, match:'),
-    '#default_value' => !empty($variables['tid']) ? 'tid' : 'vocab',
+    '#default_value' => !empty($variables['tid']) ? 'tid' : 'vocabulary',
     '#options' => array(
-      'vocab' => t('any taxonomy term'),
+      'vocabulary' => t('any taxonomy term'),
       'tid' => t('only a selected taxonomy term'),
     ),
     '#states' => array(
       'invisible' => array(
-        ':input[name=vocabulary_name]' => array('value' => '0'),
+        ':input[name=vocabulary]' => array('value' => '0'),
       ),
     ),
   );
@@ -183,12 +183,12 @@ function menu_position_menu_position_rule_taxonomy_form(array &$form, array &$fo
     '#maxlength' => 1024,
     '#title' => t('Taxonomy term'),
     '#default_value' => $terms,
-    '#autocomplete_path' => 'menu-position/taxonomy/autocomplete/' . (isset($form_state['input']['vocabulary_name']) ? $form_state['input']['vocabulary_name'] : $form['conditions']['taxonomy']['vocabulary']['#default_value']),
+    '#autocomplete_path' => 'menu-position/taxonomy/autocomplete/' . (isset($form_state['input']['vocabulary']) ? $form_state['input']['vocabulary'] : $form['conditions']['taxonomy']['vocabulary']['#default_value']),
     '#element_validate' => array('menu_position_taxonomy_autocomplete_validate'),
     '#description' => t('Match at least one of these taxonomy terms.'),
     '#states' => array(
       'visible' => array(
-        ':input[name=vocab_or_tid]' => array('value' => 'tid'),
+        ':input[name=vocabulary_or_tid]' => array('value' => 'tid'),
       ),
     ),
   );
@@ -206,14 +206,14 @@ function menu_position_menu_position_rule_taxonomy_form(array &$form, array &$fo
  *   A reference to the current form state, including submitted values.
  */
 function menu_position_menu_position_rule_taxonomy_form_submit(array &$form, array &$form_state) {
-  if (!empty($form_state['values']['term']) || $form_state['values']['vocabulary_name'] != 0) {
+  if (!empty($form_state['values']['term']) || $form_state['values']['vocabulary'] != 0) {
     $variables = array(
-      'vocabulary_name' => $form_state['values']['vocabulary_name'],
+      'vocabulary' => $form_state['values']['vocabulary'],
       'tid' => array(),
       'match_types' => $form_state['values']['match_types'],
     );
     // Determine if a taxonomy term has been selected.
-    if ($form_state['values']['vocab_or_tid'] == 'tid' && !empty($form_state['values']['term'])) {
+    if ($form_state['values']['vocabulary_or_tid'] == 'tid' && !empty($form_state['values']['term'])) {
       foreach ($form_state['values']['term'] as $term) {
         $variables['tid'][] = $term['tid'];
       }
@@ -227,7 +227,7 @@ function menu_position_menu_position_rule_taxonomy_form_submit(array &$form, arr
  */
 function menu_position_taxonomy_autocomplete($vocabulary, $tags_typed = '') {
   // Don't query for terms if no vocabulary is selected.
-  if ($vocabulary == 0) {
+  if (empty($vocabulary)) {
     backdrop_json_output(array());
     return;
   }
@@ -259,7 +259,6 @@ function menu_position_taxonomy_autocomplete($vocabulary, $tags_typed = '') {
 
     $prefix = count($tags_typed) ? implode(', ', $tags_typed) . ', ' : '';
 
-    $term_matches = array();
     foreach ($tags_return as $tid => $name) {
       $n = $name;
       // Term names containing commas or quotes must be wrapped in quotes.
@@ -287,7 +286,7 @@ function menu_position_taxonomy_autocomplete_validate($element, &$form_state) {
     foreach ($typed_terms as $typed_term) {
       // See if the term exists in the chosen vocabulary and return the tid;
       // otherwise, create a new 'autocreate' term for insert/update.
-      if ($possibilities = taxonomy_term_load_multiple_by_name(trim($typed_term), $form_state['values']['vocabulary_name'])) {
+      if ($possibilities = taxonomy_term_load_multiple(array(), array('name' => trim($typed_term), 'vocabulary' => array($form_state['values']['vocabulary'])))) {
         $term = array_pop($possibilities);
         $value[] = (array) $term;
       }
