@@ -3,7 +3,7 @@
 /**
  * Provide the summary information for the content type plugin's vertical tab.
  */
-Drupal.behaviors.menuPositionUserPageSettingsSummary = {
+Backdrop.behaviors.menuPositionUserPageSettingsSummary = {
   attach: function (context) {
     $('fieldset#edit-user-page', context).backdropSetSummary(function (context) {
       if (!$('input#edit-user-page-enable:checked').length) {
